@@ -1,0 +1,18 @@
+README.md
+.idea
+.gitignore
+
+# docker-files
+.dockerignore
+Dockerfile
+docker-compose.local.yml
+/docker/
+
+# framework-bundle
+/vendor/
+/public/build
+
+# webpack-encore-bundle
+/node_modules/
+npm-debug.log
+yarn-error.log
