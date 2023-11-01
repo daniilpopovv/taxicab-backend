@@ -4,72 +4,61 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Enum\OrderStatusEnum;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreOrderRequest;
+use App\Http\Resources\Order\OrderResource;
 use App\Models\Order;
+use App\Repositories\OrderRepository;
+use App\Services\YandexGeocoder;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class OrderController extends Controller
 {
-    public function index(): JsonResponse
-    {
-        $orders = Order::all();
-
-        return response()->json($orders);
+    public function __construct(
+        private readonly OrderRepository $orderRepository
+    ) {
     }
 
-    public function store(StoreOrderRequest $request): JsonResponse
+    public function getAll(): AnonymousResourceCollection
     {
-        $order = new Order($request->validated());
+        $orders = $this->orderRepository->getAll();
 
-        $fromAddressFormatted = $order['from_address']['formatted_address'];
-        $formAddressCoordinates = $this->getCoordinates($fromAddressFormatted);
+        return OrderResource::collection($orders);
+    }
 
-        $order->from_address = [
+    public function create(FormRequest $request): OrderResource
+    {
+        $yandexGeocoder = app(YandexGeocoder::class);
+
+        $validatedFields = $this->orderRepository->validate($request->all());
+
+        $fromAddressFormatted = $validatedFields['from_address']['formatted_address'];
+        $formAddressCoordinates = $yandexGeocoder->getCoordinates($fromAddressFormatted);
+        $validatedFields['from_address'] = [
             'latitude' => $formAddressCoordinates['latitude'],
             'longitude' => $formAddressCoordinates['longitude'],
             'formatted_address' => $fromAddressFormatted,
-            'description' => $order['from_address']['description'],
+            'description' => $validatedFields['from_address']['description'],
         ];
 
-        $toAddressFormatted = $order['to_address']['formatted_address'];
-        $toAddressCoordinates = $this->getCoordinates($toAddressFormatted);
-
-        $order->to_address = [
+        $toAddressFormatted = $validatedFields['to_address']['formatted_address'];
+        $toAddressCoordinates = $yandexGeocoder->getCoordinates($toAddressFormatted);
+        $validatedFields['to_address'] = [
             'latitude' => $toAddressCoordinates['latitude'],
             'longitude' => $toAddressCoordinates['longitude'],
             'formatted_address' => $toAddressFormatted,
-            'description' => $order['to_address']['description'],
+            'description' => $validatedFields['to_address']['description'],
         ];
 
-        $order->save();
+        $order = $this->orderRepository->create($validatedFields);
 
-        return response()->json($order);
+        return new OrderResource($order);
     }
 
-    public function getCoordinates($address): array
+    public function cancel(Order $order): JsonResponse
     {
-        $API_KEY = env('YANDEX_GEOCODER_API_KEY');
-        $encodedAddress = urlencode($address);
-        $url
-            = "https://geocode-maps.yandex.ru/1.x/?format=json&geocode=$encodedAddress&apikey=$API_KEY";
-
-        $response = file_get_contents($url);
-        $data = json_decode($response, true);
-
-        $coordinates
-            = $data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos'];
-        [$longitude, $latitude] = explode(' ', $coordinates);
-
-        return compact('latitude', 'longitude');
-    }
-
-    public function cancel($id): JsonResponse
-    {
-        $order = Order::find($id);
-        $order->status = OrderStatusEnum::CANCELLED->value;
-        $order->save();
+        $this->orderRepository->cancel($order);
 
         return response()->json('Заказ успешно отменен');
     }

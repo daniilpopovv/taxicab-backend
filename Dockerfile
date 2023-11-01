@@ -6,19 +6,12 @@ RUN apt -y update \
         && apt install -y g++ git nginx libicu-dev zip libzip-dev libpq-dev \
         && docker-php-ext-install intl opcache pdo pdo_pgsql
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
 FROM base AS composer
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY composer.lock composer.json /app/
-RUN composer install -n \
-    --no-progress \
-    --no-plugins \
-    --no-autoloader \
-    --no-scripts \
-    --no-suggest
 
 FROM base
-COPY --from=composer /app/vendor /app/vendor
 
 #entrypoint
 COPY ./infrastructure/docker/scripts/php-nginx/entrypoint.sh /etc/service/

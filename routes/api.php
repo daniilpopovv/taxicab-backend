@@ -5,6 +5,14 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\OrderController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/orders', [OrderController::class, 'index']);
-Route::post('/order', [OrderController::class, 'store']);
-Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+
+Route::prefix('orders')->group(function () {
+    Route::get('/', [OrderController::class, 'getAll']);
+});
+
+Route::prefix('order')->group(function () {
+    Route::post('/', [OrderController::class, 'create']);
+    Route::put('/{order}/cancel', [OrderController::class, 'cancel']);
+});
+
+

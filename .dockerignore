@@ -1,6 +1,8 @@
 README.md
 .idea
 .gitignore
+.editorconfig
+.gitattributes
 
 # docker-files
 .dockerignore
@@ -8,8 +10,6 @@ Dockerfile
 docker-compose.local.yml
 /docker/
 
-# framework-bundle
-/vendor/
 /public/build
 
 # webpack-encore-bundle
