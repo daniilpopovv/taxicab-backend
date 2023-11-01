@@ -13,23 +13,21 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $fillable
-        = [
-            'uuid',
-            'phone_number',
-            'from_address',
-            'to_address',
-            'status',
-        ];
+    protected $fillable = [
+        'uuid',
+        'phone_number',
+        'from_address',
+        'to_address',
+        'status',
+    ];
 
-    protected $casts
-        = [
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-            'from_address' => 'json',
-            'to_address' => 'json',
-            'status' => OrderStatusEnum::class,
-        ];
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'from_address' => 'json',
+        'to_address' => 'json',
+        'status' => OrderStatusEnum::class,
+    ];
 
     public function __construct(array $attributes = [])
     {
@@ -38,7 +36,7 @@ class Order extends Model
         $this->status = OrderStatusEnum::CREATED->value;
     }
 
-    public static function boot()
+    public static function boot(): void
     {
         parent::boot();
 
